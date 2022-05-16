@@ -1,23 +1,22 @@
 import csv
-from re import X
 
 stops_all = {} #dict for all stops objects, key is stop ID
 routes_all = {} #dict for all route objects, key is route ID
-trips_all = {}
-stop_seq_all = {} #{"trip_id1":[{"stop_id1":stop_seq1},{"stop_id1":stop_seq2...],...]}
-stopsegments_dict = {}
+trips_all = {} #dict for all trip objects, key is trip ID
+stop_seq_all = {} #dict of lists of stop time object with same trip ID, key is trip ID
+stopsegments_dict = {} #dict of all segments
 
 
 class Stop:
     def __init__(self):
-        self.stop_id = ""
+        self.stop_id = "" #initialize string value
         self.stop_name = ""
     
     def load(self, dict):
-        self.stop_id = dict["stop_id"]
+        self.stop_id = dict["stop_id"] #gets attribute from stop id column
         self.stop_name = dict["stop_name"]
 
-    def getStopId(self):
+    def getStopId(self): #getter for stop_id
         return self.stop_id
 
     def getStopName(self):
@@ -46,11 +45,11 @@ class Route:
 class Trip:
     def __init__(self):
         self.trip_id = ""
-        self.route = Route
+        self.route = Route #initializes as Route class
     
     def load(self, dict):
         self.trip_id = dict["trip_id"]
-        self.route = routes_all.get(dict["route_id"])
+        self.route = routes_all.get(dict["route_id"]) #loads route object with the same route ID as this row
     
     def getTripID(self):
         return self.trip_id
@@ -83,7 +82,7 @@ class StopSegment:
     def getOcc(self):
         return self.occurrences
 
-    def create_segments(stop_times):
+    def create_segments(stop_times): #creates segments
         for i in stop_times:
             for v in stop_times[i]:
                     if v.getStopSeq() == "1":
@@ -94,11 +93,11 @@ class StopSegment:
                         stop_2 = v.stop
 
                     else:
-                        #vyšší než první dvě zastávky -> druhá jde za první a nově načetlá následuje jako stop_2
+                        #bigger than the two stops -> second changes to first and the newly loaded one follows as stop_2
                         stop_1 = stop_2
                         stop_2 = v.stop
 
-                    # následující podmínka: seřazení dle id, tak aby stejný úsek byl stejně identifikován v obou směrech
+                    #sorting based on ID, so the same segment is identified in both directions
                     if stop_1.getStopId() <= stop_2.getStopId():
                         first = stop_1
                         second = stop_2
@@ -120,12 +119,12 @@ class StopSegment:
         return stopsegments_dict
 
 
-with open("stops.txt", newline='', encoding="utf-8") as csvfile:
-    reader = csv.DictReader(csvfile)
+with open("stops.txt", newline='', encoding="utf-8") as csvfile: #opens file
+    reader = csv.DictReader(csvfile) #reads file as dict
     for row in reader:
-        stop = Stop()
-        stop.load(row)
-        stops_all.update({stop.getStopId():stop})
+        stop = Stop() #initializes as Stop
+        stop.load(row) #loads specific row
+        stops_all.update({stop.getStopId():stop}) #creates dict of all stops, uses stop ID as key
 
 with open("routes.txt", newline='', encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
@@ -146,15 +145,16 @@ with open("stop_times.txt", newline='', encoding="utf-8") as csvfile:
     for row in reader:
         stop_seq = StopTime()
         stop_seq.load(row)
-        if stop_seq.trip.getTripID() not in stop_seq_all.keys():
+        if stop_seq.trip.getTripID() not in stop_seq_all.keys(): #creates dict of lists of stop time objects with same trip ID, key is trip ID
             stop_seq_all[stop_seq.trip.getTripID()] = [stop_seq]
-        elif stop_seq.trip.getTripID() in stop_seq_all.keys():
+        elif stop_seq.trip.getTripID() in stop_seq_all.keys(): #if there already is this trip ID as key appends this StopTime objects to list with the same trip ID
             stop_seq_all[stop_seq.trip.getTripID()].append(stop_seq)
         
 data = StopSegment
 data = StopSegment.create_segments(stop_seq_all)
-sorted_segment_dict = sorted(data.values(), key = lambda x: x.getOcc(), reverse=True)
+sorted_segment_dict = sorted(data.values(), key = lambda x: x.getOcc(), reverse=True) #sorts segments based on occurrences
+
 i = 1
-for item in sorted_segment_dict[:5]:
+for item in sorted_segment_dict[:5]: #prints five stops with the highest occurrences
     print(f"{i}.: Spojení je mezi zastávkou {item.stop_dep.getStopName()} a zastávkou {item.stop_ariv.getStopName()}. Počet spojů: {item.getOcc()}.")
     i+=1
