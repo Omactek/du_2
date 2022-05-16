@@ -1,9 +1,11 @@
 import csv
+from re import X
 
-stops_all = {} #dict for all the stops objects
-routes_all = {}
+stops_all = {} #dict for all stops objects, key is stop ID
+routes_all = {} #dict for all route objects, key is route ID
 trips_all = {}
 stop_seq_all = {} #{"trip_id1":[{"stop_id1":stop_seq1},{"stop_id1":stop_seq2...],...]}
+stopsegments_dict = {}
 
 
 class Stop:
@@ -67,6 +69,57 @@ class StopTime:
     def getStopSeq(self):
         return self.stop_sequence
 
+class StopSegment:
+    def __init__(self):
+        self.stop_dep = Stop
+        self.stop_ariv = Stop
+        self.occurrences = 0
+
+    def load(self, dep, ariv, occ):
+        self.stop_dep = dep
+        self.stop_ariv = ariv
+        self.occurrences = occ
+
+    def getOcc(self):
+        return self.occurrences
+
+    def create_segments(stop_times):
+        for i in stop_times:
+            for v in stop_times[i]:
+                    if v.getStopSeq() == "1":
+                        stop_1 = v.stop
+                        continue
+
+                    elif v.getStopSeq() == "2":
+                        stop_2 = v.stop
+
+                    else:
+                        #vyšší než první dvě zastávky -> druhá jde za první a nově načetlá následuje jako stop_2
+                        stop_1 = stop_2
+                        stop_2 = v.stop
+
+                    # následující podmínka: seřazení dle id, tak aby stejný úsek byl stejně identifikován v obou směrech
+                    if stop_1.getStopId() <= stop_2.getStopId():
+                        first = stop_1
+                        second = stop_2
+                    else:
+                        first = stop_2
+                        second = stop_1
+
+                    segment_key = (first.getStopId(), second.getStopId())
+
+                    if segment_key not in stopsegments_dict:
+                        occurrences = 1
+                        sgmnt = StopSegment()
+                        sgmnt.load(first,second,occurrences)
+                        stopsegments_dict[(segment_key)] = sgmnt
+
+                    else:
+                        stopsegments_dict[segment_key].occurrences += 1
+
+        return stopsegments_dict
+
+
 with open("stops.txt", newline='', encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
@@ -98,17 +151,10 @@ with open("stop_times.txt", newline='', encoding="utf-8") as csvfile:
         elif stop_seq.trip.getTripID() in stop_seq_all.keys():
             stop_seq_all[stop_seq.trip.getTripID()].append(stop_seq)
         
-class StopSegment:
-    def __init__(self):
-        self.stop_dep = Stop
-        self.stop_ariv = Stop
-        self.occurences = 0
-
-    #@classmethod
-    def load_stops(cls,stop_times):
-        for i in stop_times:
-            for v in stop_times[i]:
-                print(v.stop.getStopId())
-
-
-data = StopSegment.load_stops(StopSegment,stop_seq_all)
+data = StopSegment
+data = StopSegment.create_segments(stop_seq_all)
+sorted_segment_dict = sorted(data.values(), key = lambda x: x.getOcc(), reverse=True)
+i = 1
+for item in sorted_segment_dict[:5]:
+    print(f"{i}.: Spojení je mezi zastávkou {item.stop_dep.getStopName()} a zastávkou {item.stop_ariv.getStopName()}. Počet spojů: {item.getOcc()}.")
+    i+=1
