@@ -5,6 +5,7 @@ routes_all = {}
 trips_all = {}
 stop_seq_all = {} #{"trip_id1":[{"stop_id1":stop_seq1},{"stop_id1":stop_seq2...],...]}
 
+
 class Stop:
     def __init__(self):
         self.stop_id = ""
@@ -13,6 +14,12 @@ class Stop:
     def load(self, dict):
         self.stop_id = dict["stop_id"]
         self.stop_name = dict["stop_name"]
+
+    def getStopId(self):
+        return self.stop_id
+
+    def getStopName(self):
+        return self.stop_name
 
 class Route:
     def __init__(self):
@@ -25,98 +32,83 @@ class Route:
         self.short_name = dict["route_short_name"]
         self.long_name = dict["route_long_name"]
 
+    def getRouteID(self):
+        return self.route_id
+
+    def getShortName(self):
+        return self.short_name
+
+    def getLongName(self):
+        return self.long_name
+
 class Trip:
     def __init__(self):
         self.trip_id = ""
-        self.route = {}
+        self.route = Route
     
     def load(self, dict):
         self.trip_id = dict["trip_id"]
         self.route = routes_all.get(dict["route_id"])
+    
+    def getTripID(self):
+        return self.trip_id
 
-class Stop_time:
+class StopTime:
     def __init__(self):
-        self.trip = {}
-        self.stop = {}
+        self.trip = Trip
+        self.stop = Stop
         self.stop_sequence = 0
 
     def load(self, dict):
         self.trip = trips_all.get(dict["trip_id"])
         self.stop = stops_all.get(dict["stop_id"])
-        print(self.trip)
         self.stop_sequence = dict["stop_sequence"]
+    
+    def getStopSeq(self):
+        return self.stop_sequence
 
 with open("stops.txt", newline='', encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         stop = Stop()
         stop.load(row)
-        stops_all[stop.stop_id] = stop.stop_name
+        stops_all.update({stop.getStopId():stop})
 
 with open("routes.txt", newline='', encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         route = Route()
         route.load(row)
-        routes_all[route.route_id] = {"short_name":route.short_name,"long_name":route.long_name}
+        routes_all.update({route.getRouteID():route})
 
 with open("trips.txt", newline='', encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         trip = Trip()
         trip.load(row)
-        trips_all[trip.trip_id] = {"route":trip.route}  
+        trips_all.update({trip.getTripID():trip})
 
 with open("stop_times.txt", newline='', encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
-        stop_seq = Trip()
+        stop_seq = StopTime()
         stop_seq.load(row)
-        #if stop_seq_all.get(stop_seq.trip[, default])
+        if stop_seq.trip.getTripID() not in stop_seq_all.keys():
+            stop_seq_all[stop_seq.trip.getTripID()] = [stop_seq]
+        elif stop_seq.trip.getTripID() in stop_seq_all.keys():
+            stop_seq_all[stop_seq.trip.getTripID()].append(stop_seq)
         
- #část 2 - vytvoření úseků - potřeba otestovat
-
 class StopSegment:
     def __init__(self):
-        self.stop_1 = stop_1
-        self.stop_2 = stop_2
-        self.occurrences = occurrences
-    
-    @classmethod
-    def loading_segments(cls, stoptime_seznam):
-        stopsegments_dict = {}
+        self.stop_dep = Stop
+        self.stop_ariv = Stop
+        self.occurences = 0
 
-        for stop_time in stoptime_seznam:
-            if stop_time.stop_sequence == "1":
-                stop_1 = stop_time.stop
-                continue
-            elif stop_time.stop_sequence == "2":
-                stop_2 = stop_time.stop
-
-            else:
-                #vyšší než první dvě zastávky -> druhá jde za první a nově načetlá následuje jako stop_2
-                stop_1 = stop_2
-                stop_2 = stop_time.stop
-
-                
-            # následující podmínka: seřazení dle id, tak aby stejný úsek byl stejně identifikován v obou směrech
-            if stop_1.id <= stop_2.id:
-                first = stop_1
-                second = stop_2
-            else:
-                first = stop_2
-                second = stop_1
-
-            segment_key = (first.id, second.id)
-
-            if segment_key not in stopsegments_dict:
-                occurrences = 1
-                sgmnt = StopSegment(first, second, occurrences)
-                stopsegments_dict[(segment_key)] = sgmnt
-
-            else:
-                stopsegments_dict[segment_key].occurrences += 1
-
-            return stopsegments_dict
+    #@classmethod
+    def load_stops(cls,stop_times):
+        for i in stop_times:
+            for v in stop_times[i]:
+                print(v.stop.getStopId())
 
 
+data = StopSegment.load_stops(StopSegment,stop_seq_all)
