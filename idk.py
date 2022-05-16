@@ -1,39 +1,78 @@
 import csv
 
+stops_all = {} #dict for all the stops objects
+routes_all = {}
+trips_all = {}
+stop_seq_all = {} #{"trip_id1":[{"stop_id1":stop_seq1},{"stop_id1":stop_seq2...],...]}
+
 class Stop:
     def __init__(self):
         self.stop_id = ""
         self.stop_name = ""
-        self.stop_dict = {}
     
     def load(self, dict):
         self.stop_id = dict["stop_id"]
         self.stop_name = dict["stop_name"]
-        self.stop_dict= {"stop_id":self.stop_id,"stop_name":self.stop_name}
 
-class Routes:
+class Route:
     def __init__(self):
         self.route_id = ""
         self.short_name = ""
         self.long_name = ""
-        self.route_dict = {}
     
     def load(self, dict):
         self.route_id = dict["route_id"]
-        self.short_name = dict["short_name"]
-        self.long_name = dict["long_name"]
-        self.stop_dict = {"route_id":self.route_id,"short_name":self.short_name,"long_name":self.long_name}
+        self.short_name = dict["route_short_name"]
+        self.long_name = dict["route_long_name"]
 
+class Trip:
+    def __init__(self):
+        self.trip_id = ""
+        self.route = {}
+    
+    def load(self, dict):
+        self.trip_id = dict["trip_id"]
+        self.route = routes_all.get(dict["route_id"])
 
+class Stop_time:
+    def __init__(self):
+        self.trip = {}
+        self.stop = {}
+        self.stop_sequence = 0
+
+    def load(self, dict):
+        self.trip = trips_all.get(dict["trip_id"])
+        self.stop = stops_all.get(dict["stop_id"])
+        print(self.trip)
+        self.stop_sequence = dict["stop_sequence"]
 
 with open("stops.txt", newline='', encoding="utf-8") as csvfile:
     reader = csv.DictReader(csvfile)
     for row in reader:
         stop = Stop()
         stop.load(row)
-        
-        
-        
+        stops_all[stop.stop_id] = stop.stop_name
+
+with open("routes.txt", newline='', encoding="utf-8") as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        route = Route()
+        route.load(row)
+        routes_all[route.route_id] = {"short_name":route.short_name,"long_name":route.long_name}
+
+with open("trips.txt", newline='', encoding="utf-8") as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        trip = Trip()
+        trip.load(row)
+        trips_all[trip.trip_id] = {"route":trip.route}  
+
+with open("stop_times.txt", newline='', encoding="utf-8") as csvfile:
+    reader = csv.DictReader(csvfile)
+    for row in reader:
+        stop_seq = Trip()
+        stop_seq.load(row)
+        #if stop_seq_all.get(stop_seq.trip[, default])
         
  #část 2 - vytvoření úseků - potřeba otestovat
 
