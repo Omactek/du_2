@@ -97,20 +97,12 @@ class StopSegment:
                         stop_1 = stop_2
                         stop_2 = v.stop
 
-                    #sorting based on ID, so the same segment is identified in both directions
-                    if stop_1.getStopId() <= stop_2.getStopId():
-                        first = stop_1
-                        second = stop_2
-                    else:
-                        first = stop_2
-                        second = stop_1
-
-                    segment_key = (first.getStopId(), second.getStopId())
+                    segment_key = (stop_1.getStopId(), stop_2.getStopId())
 
                     if segment_key not in stopsegments_dict:
                         occurrences = 1
                         sgmnt = StopSegment()
-                        sgmnt.load(first,second,occurrences)
+                        sgmnt.load(stop_1,stop_2,occurrences)
                         stopsegments_dict[(segment_key)] = sgmnt
 
                     else:
