@@ -102,7 +102,15 @@ class StopSegment:
             else:
                 stopsegments_dict[segment_key].occurrences += 1
 
-        print(stopsegments_dict)
         return stopsegments_dict
 
-StopSegment.loading_segments(stop_times_all)
+
+    @classmethod
+    def print_segments(cls, stopsegments_dict):
+        sorted_segment_dict = sorted(stopsegments_dict.values(), key = lambda x: x.occurrences, reverse=True)
+        i = 1
+        for item in sorted_segment_dict[:5]:
+            print(f"{i}.: Spojení je mezi zastávkou {item.stop_1.stop_id} a zastávkou {item.stop_2.stop_id}. Počet spojů: {item.occurrences}.")
+            i+=1
+
+StopSegment.print_segments(StopSegment.loading_segments(stop_times_all))
