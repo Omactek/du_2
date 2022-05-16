@@ -118,37 +118,41 @@ class StopSegment:
 
         return stopsegments_dict
 
+try:
+    with open("stops.txt", newline='', encoding="utf-8") as csvfile: #opens file
+        reader = csv.DictReader(csvfile) #reads file as dict
+        for row in reader:
+            stop = Stop() #initializes as Stop
+            stop.load(row) #loads specific row
+            stops_all.update({stop.getStopId():stop}) #creates dict of all stops, uses stop ID as key
 
-with open("stops.txt", newline='', encoding="utf-8") as csvfile: #opens file
-    reader = csv.DictReader(csvfile) #reads file as dict
-    for row in reader:
-        stop = Stop() #initializes as Stop
-        stop.load(row) #loads specific row
-        stops_all.update({stop.getStopId():stop}) #creates dict of all stops, uses stop ID as key
+    with open("routes.txt", newline='', encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            route = Route()
+            route.load(row)
+            routes_all.update({route.getRouteID():route})
 
-with open("routes.txt", newline='', encoding="utf-8") as csvfile:
-    reader = csv.DictReader(csvfile)
-    for row in reader:
-        route = Route()
-        route.load(row)
-        routes_all.update({route.getRouteID():route})
+    with open("trips.txt", newline='', encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            trip = Trip()
+            trip.load(row)
+            trips_all.update({trip.getTripID():trip})
 
-with open("trips.txt", newline='', encoding="utf-8") as csvfile:
-    reader = csv.DictReader(csvfile)
-    for row in reader:
-        trip = Trip()
-        trip.load(row)
-        trips_all.update({trip.getTripID():trip})
-
-with open("stop_times.txt", newline='', encoding="utf-8") as csvfile:
-    reader = csv.DictReader(csvfile)
-    for row in reader:
-        stop_seq = StopTime()
-        stop_seq.load(row)
-        if stop_seq.trip.getTripID() not in stop_seq_all.keys(): #creates dict of lists of stop time objects with same trip ID, key is trip ID
-            stop_seq_all[stop_seq.trip.getTripID()] = [stop_seq]
-        elif stop_seq.trip.getTripID() in stop_seq_all.keys(): #if there already is this trip ID as key appends this StopTime objects to list with the same trip ID
-            stop_seq_all[stop_seq.trip.getTripID()].append(stop_seq)
+    with open("stop_times.txt", newline='', encoding="utf-8") as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            stop_seq = StopTime()
+            stop_seq.load(row)
+            if stop_seq.trip.getTripID() not in stop_seq_all.keys(): #creates dict of lists of stop time objects with same trip ID, key is trip ID
+                stop_seq_all[stop_seq.trip.getTripID()] = [stop_seq]
+            elif stop_seq.trip.getTripID() in stop_seq_all.keys(): #if there already is this trip ID as key appends this StopTime objects to list with the same trip ID
+                stop_seq_all[stop_seq.trip.getTripID()].append(stop_seq)
+except FileNotFoundError as error:
+    print("File {:s} not found.".format(error.filename))
+except PermissionError as error:
+    print("You don´t have permission for file {:s}".format(error.filename))
         
 data = StopSegment
 data = StopSegment.create_segments(stop_seq_all)
